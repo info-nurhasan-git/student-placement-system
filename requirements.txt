@@ -1,0 +1,15 @@
+# Web framework
+Flask>=3.0,<4.0
+
+# Data handling / preprocessing
+numpy>=1.26,<3.0
+pandas>=2.2,<4.0
+scikit-learn>=1.6.1,<2.0
+
+# Model runtime
+# Keras 3 reads the existing .keras file. TensorFlow is preferred when it can be
+# imported; Torch is used automatically as a Keras backend if TensorFlow native
+# libraries are unavailable (e.g. blocked by Windows application-control policy).
+keras>=3.13,<4.0
+tensorflow>=2.16,<3.0
+torch>=2.2

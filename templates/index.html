@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI-Based Student Placement Prediction using a trained Artificial Neural Network.">
+  <title>PlacePredict AI | Student Placement Prediction</title>
+
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar navbar-expand-lg fixed-top app-navbar" aria-label="Main navigation">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#home">
+        <img src="{{ url_for('static', filename='images/favicon.svg') }}" alt="" width="34" height="34">
+        <span>PlacePredict <span class="brand-accent">AI</span></span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#predict">Predict</a></li>
+          <li class="nav-item"><a class="nav-link" href="#about">About the Model</a></li>
+          <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
+          <li class="nav-item ms-lg-3">
+            <a class="btn btn-sm btn-primary rounded-pill px-4 nav-cta" href="#predict">Get Prediction</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- ================= HERO ================= -->
+    <section id="home" class="hero-section">
+      <div class="container">
+        <div class="hero-content text-center">
+          <h1 class="hero-title">
+            Student Placement <span class="gradient-text">Prediction</span>
+            Powered by AI
+          </h1>
+          <p class="hero-subtitle mx-auto">
+            Enter a student's academic and skill profile and receive an instant,
+            data-driven placement outlook from a trained Artificial Neural Network.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PREDICTION SECTION ================= -->
+    <section id="predict" class="section-padding">
+      <div class="container">
+        <div class="section-heading text-center mb-5">
+          <span class="section-kicker">Prediction Studio</span>
+          <h2>Student Profile &amp; Result</h2>
+          <p>All {{ feature_count }} fields are required and are passed to the model in the exact training order.</p>
+        </div>
+
+        <div class="alert app-alert d-none" id="alertBox" role="alert" aria-live="assertive"></div>
+
+        <div class="row g-4 align-items-start">
+          <!-- INPUT FORM -->
+          <div class="col-xl-6">
+            <div class="card app-card form-card">
+              <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                  <h5 class="card-title mb-1">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="icon-primary"><path d="M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0M5 19a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    Student Input
+                  </h5>
+                  <small class="text-muted">Exactly the features used during training</small>
+                </div>
+                <span class="badge rounded-pill badge-soft">{{ feature_count }} features</span>
+              </div>
+
+              <div class="card-body">
+                <form id="predictionForm" novalidate>
+                  <div class="row g-3">
+                    {% for feature in features %}
+                    <div class="col-md-6">
+                      <label for="field-{{ feature.index }}" class="form-label">
+                        {{ feature.label }}
+                        <span class="text-danger">*</span>
+                      </label>
+                      <div class="input-group input-group-lg app-input-group">
+                        <input type="number"
+                               class="form-control"
+                               id="field-{{ feature.index }}"
+                               name="{{ feature.name }}"
+                               min="{{ feature.min }}"
+                               max="{{ feature.max }}"
+                               step="{{ feature.step }}"
+                               placeholder="{{ feature.placeholder }}"
+                               data-label="{{ feature.label }}"
+                               autocomplete="off"
+                               required>
+                        {% if feature.unit %}
+                        <span class="input-group-text">{{ feature.unit }}</span>
+                        {% endif %}
+                      </div>
+                      <div class="form-text">{{ feature.hint }}</div>
+                      <div class="invalid-feedback" data-feedback-for="{{ feature.name }}"></div>
+                    </div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="predictButton">
+                      <span class="button-spinner spinner-border spinner-border-sm me-2 d-none" aria-hidden="true"></span>
+                      <span class="button-label">Predict Placement</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-lg" id="sampleButton">
+                      Use Sample
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary btn-lg" id="resetButton">
+                      Reset
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- RESULT DASHBOARD -->
+          <div class="col-xl-6">
+            <div class="card app-card result-card" id="resultCard">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="icon-primary"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  Prediction Dashboard
+                </h5>
+                <span class="badge rounded-pill badge-soft" id="resultTimestamp">—</span>
+              </div>
+
+              <div class="card-body" id="resultBody">
+                <div class="result-empty text-center py-5" id="resultEmpty">
+                  <div class="empty-illustration">
+                    <svg viewBox="0 0 120 120" width="96" height="96" aria-hidden="true">
+                      <circle cx="60" cy="60" r="52" fill="#eff6ff"/>
+                      <path d="M38 62l14 14 31-34" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/>
+                    </svg>
+                  </div>
+                  <h6 class="mt-3 mb-1">No prediction yet</h6>
+                  <p class="text-muted small mb-0">Complete the form and click <strong>Predict Placement</strong> to see the analysis.</p>
+                </div>
+
+                <div class="result-content d-none" id="resultContent" aria-live="polite">
+                  <div class="prediction-banner" id="predictionBanner">
+                    <div>
+                      <span class="result-eyebrow">Model Prediction</span>
+                      <h3 class="prediction-label mb-1" id="predictionLabel">—</h3>
+                      <p class="mb-0 small" id="predictionSubtext">—</p>
+                    </div>
+                    <span class="prediction-icon" id="predictionIcon">✓</span>
+                  </div>
+
+                  <div class="row g-3 mt-1">
+                    <div class="col-md-5">
+                      <div class="chart-wrapper">
+                        <canvas id="probabilityChart" aria-label="Placement probability chart" role="img"></canvas>
+                        <div class="chart-center" id="chartCenter">—</div>
+                      </div>
+                      <p class="chart-caption text-muted small text-center mt-2 mb-0">
+                        Probability of placement (sigmoid output)
+                      </p>
+                    </div>
+
+                    <div class="col-md-7">
+                      <div class="probability-details">
+                        <div class="detail-row">
+                          <span>Placement probability</span>
+                          <strong id="probabilityValue">—</strong>
+                        </div>
+                        <div class="detail-row">
+                          <span>Decision threshold</span>
+                          <strong>0.50</strong>
+                        </div>
+                        <div class="detail-row">
+                          <span>Input features</span>
+                          <strong>{{ feature_count }}</strong>
+                        </div>
+                        <div class="detail-row">
+                          <span>Preprocessing</span>
+                          <strong>StandardScaler</strong>
+                        </div>
+                        <div class="probability-bar" aria-hidden="true">
+                          <div class="probability-bar-fill" id="probabilityBar"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="summary-block mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0">Student Input Summary</h6>
+                      <button class="btn btn-link btn-sm p-0" type="button" data-bs-toggle="collapse"
+                              data-bs-target="#summaryCollapse" aria-expanded="true">
+                        Toggle
+                      </button>
+                    </div>
+                    <div class="collapse show" id="summaryCollapse">
+                      <div class="table-responsive">
+                        <table class="table table-sm summary-table mb-0">
+                          <tbody id="summaryTableBody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="disclaimer mt-3" id="disclaimerText"></div>
+
+                  <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="button" class="btn btn-primary btn-sm" id="downloadButton">
+                      Download Report
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="printButton">
+                      Print
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="anotherButton">
+                      Predict Another
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ABOUT MODEL ================= -->
+    <section id="about" class="section-padding section-alt">
+      <div class="container">
+        <div class="section-heading text-center mb-5">
+          <span class="section-kicker">Model Overview</span>
+          <h2>About the ANN Model</h2>
+          <p>The trained artifacts are loaded as-is. Nothing is retrained or re-architected in this web app.</p>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="feature-card h-100">
+              <div class="feature-icon icon-blue">01</div>
+              <h5>Input Layer</h5>
+              <p>{{ feature_count }} numeric features, supplied in the exact order recorded by the fitted StandardScaler.</p>
+              <ul class="mini-list">
+                {% for feature in features %}
+                <li>{{ feature.label }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card h-100">
+              <div class="feature-icon icon-cyan">02</div>
+              <h5>Hidden Layers</h5>
+              <p>Dense layers with ReLU activation:</p>
+              <div class="architecture-flow">
+                <span>{{ feature_count }}</span>
+                {% for units in dense_units[:-1] %}
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <span>{{ units }}</span>
+                {% endfor %}
+              </div>
+              <p class="mt-3">Learned representations are preserved directly from the saved weights.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-card h-100">
+              <div class="feature-icon icon-emerald">03</div>
+              <h5>Output Layer</h5>
+              <p>A single neuron with sigmoid activation produces a value between 0 and 1.</p>
+              <div class="threshold-box">
+                <span>≥ 0.50</span>
+                <strong>Placed</strong>
+                <span class="mx-2">/</span>
+                <span>&lt; 0.50</span>
+                <strong>Not Placed</strong>
+              </div>
+              <p class="mt-3">The probability is an estimate, not a guarantee of an actual placement outcome.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HOW IT WORKS ================= -->
+    <section id="how-it-works" class="section-padding">
+      <div class="container">
+        <div class="section-heading text-center mb-5">
+          <span class="section-kicker">Workflow</span>
+          <h2>How Prediction Works</h2>
+          <p>A transparent pipeline from browser input to model output.</p>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card h-100">
+              <span class="step-number">1</span>
+              <h6>Collect Input</h6>
+              <p>The form captures exactly the {{ feature_count }} features the model was trained on.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card h-100">
+              <span class="step-number">2</span>
+              <h6>Validate &amp; Order</h6>
+              <p>The Flask API validates values and reconstructs the training feature order.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card h-100">
+              <span class="step-number">3</span>
+              <h6>Scale &amp; Infer</h6>
+              <p>The fitted scaler standardises input, then the saved ANN generates a probability.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="step-card h-100">
+              <span class="step-number">4</span>
+              <h6>Visualise</h6>
+              <p>The dashboard shows the result, probability chart and a full input summary.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HISTORY ================= -->
+    <section id="history" class="section-padding section-alt">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+          <div>
+            <span class="section-kicker">Optional Feature</span>
+            <h2 class="mb-1">Recent Predictions</h2>
+            <p class="text-muted mb-0">Stored only in your browser (localStorage). Nothing is sent to a database.</p>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="clearHistoryButton">
+            Clear History
+          </button>
+        </div>
+
+        <div class="card app-card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle history-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Prediction</th>
+                    <th>Probability</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <tr class="history-empty-row">
+                    <td colspan="4" class="text-center text-muted py-4">No predictions recorded yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="app-footer">
+    <div class="container">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <img src="{{ url_for('static', filename='images/favicon.svg') }}" alt="" width="28" height="28">
+          <strong>PlacePredict AI</strong>
+        </div>
+        <p class="mb-0 small text-muted">
+          Built with Flask, Keras and Chart.js · Model estimates are not guarantees.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= LOADING OVERLAY ================= -->
+  <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+    <div class="loading-card text-center">
+      <div class="loading-spinner" role="status" aria-label="Loading"></div>
+      <h6 class="mt-3 mb-1">Running ANN inference…</h6>
+      <p class="text-muted small mb-0">Scaling input and generating prediction</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    window.APP_CONFIG = {
+      features: {{ features|tojson }},
+      featureNames: {{ feature_names|tojson }},
+      denseUnits: {{ dense_units|tojson }},
+      backend: {{ keras_backend|tojson }}
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
